@@ -338,6 +338,43 @@ describe('MessageList nested tool calls', () => {
     )
   })
 
+  it('keeps user actions anchored to the right bubble and assistant actions to the left bubble', () => {
+    useChatStore.setState({
+      sessions: {
+        [ACTIVE_TAB]: makeSessionState({
+          messages: [
+            {
+              id: 'user-1',
+              type: 'user_text',
+              content: '请把这条 prompt 放在右侧',
+              timestamp: 1,
+            },
+            {
+              id: 'assistant-1',
+              type: 'assistant_text',
+              content: '这条回复应该停在左侧。',
+              timestamp: 2,
+            },
+          ],
+        }),
+      },
+    })
+
+    render(<MessageList />)
+
+    const userShell = screen.getByText('请把这条 prompt 放在右侧').closest('[data-message-shell="user"]')
+    const assistantShell = screen.getByText('这条回复应该停在左侧。').closest('[data-message-shell="assistant"]')
+    const userActions = screen.getByRole('button', { name: 'Copy prompt' }).closest('[data-message-actions]')
+    const assistantActions = screen.getByRole('button', { name: 'Copy reply' }).closest('[data-message-actions]')
+
+    expect(userShell).toBeTruthy()
+    expect(userShell?.className).toContain('items-end')
+    expect(assistantShell).toBeTruthy()
+    expect(assistantShell?.className).toContain('items-start')
+    expect(userActions?.getAttribute('data-align')).toBe('end')
+    expect(assistantActions?.getAttribute('data-align')).toBe('start')
+  })
+
   it('opens a rewind preview modal for user messages', async () => {
     vi.spyOn(sessionsApi, 'rewind').mockResolvedValue({
       target: {
